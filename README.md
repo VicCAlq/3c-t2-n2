@@ -15,26 +15,32 @@ A pasta `docs` contém arquivos no formato markdown (igual a este) para consulta
 
 ## Formato da atividade
 
-A atividade consiste de quatro exercícios onde trabalharemos o conteúdo que foi explicado em aula. Cada questão vale 1/3 da nota total da atividade, ou seja, o aluno precisa acertar apenas 3/4 das questões.
+O projeto possui duas partes: Mobile e Backend:
+- Mobile se encontra na pasta `frontend`
+- Backend se encontra na pasta `backend`
 
-Níveis das questões:
-- Três questões simples
-- Uma questão intermediária
+Antes de desenvolver, instale as dependências com o comando `npm run install` de dentro da pasta raiz do projeto (onde as pastas `backend` e `frontend` se encontram).
+Para executar o projeto (ambas as partes), execute o comando `npm run web` da mesma pasta da instrução anterior.
 
-Os arquivos das questões já estão criados dentro da pasta `/src/`. Cada arquivo contém a descrição do que deve ser produzido, mas não há nenhum código pois este deve ser completamente feito pelo aluno.
+O objetivo da N2 é desenvolver um agregador de notícias:
 
-Atenção aos detalhes abaixo:
-1. Os arquivos das questões são sempre os arquivos existentes na pasta `/src/`.
-2. Os arquivos das questões SEMPRE começam com a palavra `Atv` de `Atividade`.
-3. Para testar as respostas, abra o terminal na pasta correta (confira com o comando `ls` se a pasta onde você está no terminal exibe as pastas `src`, `assets` e `docs`).
-4. Se estiver na pasta correta, digite o comando `node ./src/NomeDaAtividade.js` ainda no terminal.
-5. Se não estiver na pasta correta, use no terminal os comandos `cd` para navegar para a pasta desejada, `pwd` para conferir onde você está no momento, e `ls` para conferir o conteúdo da pasta atual. Só execute o comando do passo 4 se estiver na pasta correta.
-6. O envio da atividade deve ser feito através do GitHub. Para o envio, siga os passos abaixo.
+Sobre o backend:
+- O backend deve criar um banco de dados com uma tabela para as notícias e outra para as fontes de notícias.
+- Ele deve ter as rotas:
+    - uma rota para cadastrar uma nova fonte de notícias
+    - uma rota para filtrar notícias por fonte
+    - uma rota para filtrar notícias por categoria
+    - uma rota para apagar uma fonte de notícias
+    - uma rota para apagar uma notícia
 
+Sobre o frontend:
+- Ele deve ter um campo para inserir uma nova fonte de notícias (formulário com campo de texto que recebe um link a ser preenchido)
+- Ele deve ter uma tabela para exibir as notícias
+- Ele deve ter dois menus no topo da tabela para filtrar as notícias por categoria ou por fonte
 
 ## Para responder as atividades
 
-1. Cada aluno possui uma "branch" cujo nome corresponde ao nome de usuário de cada aluno. Ao clicar no botão com o texto "master" acima da lista de arquivos deste projeto, aparece um menu onde você deve escolher a "branch" cujo nome é o mesmo que o nome de seu usuário no GitHub.  
+1. Cada grupo possui uma "branch" cujo nome corresponde ao nome de usuário de cada grupo. Ao clicar no botão com o texto "master" acima da lista de arquivos deste projeto, aparece um menu onde você deve escolher a "branch" cujo nome é o mesmo que o nome de seu usuário no GitHub.  
 ![Botão para selecionar branches](./assets/readme/branch-01.png)  
 ![Menu para selecionar branches](./assets/readme/branch-02.png)  
 
