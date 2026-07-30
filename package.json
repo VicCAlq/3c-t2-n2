@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "web": "(cd frontend && npm run dev) & (cd backend && npm run dev) && fg",
+    "web": "(cd frontend && npm run web) & (cd backend && npm run dev) && fg",
     "install": "cd frontend && npm install & cd ../backend && npm install",
     "front": "cd frontend && npm run dev",
     "back": "cd backend && npm run dev",
