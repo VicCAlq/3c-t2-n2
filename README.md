@@ -20,7 +20,9 @@ O projeto possui duas partes: Mobile e Backend:
 - Backend se encontra na pasta `backend`
 
 Antes de desenvolver, instale as dependências com o comando `npm run install` de dentro da pasta raiz do projeto (onde as pastas `backend` e `frontend` se encontram).
-Para executar o projeto (ambas as partes), execute o comando `npm run web` da mesma pasta da instrução anterior.
+Para executar o projeto abra dois terminais:
+- Abra o frontend com o comando `npm run front` da mesma pasta da instrução anterior.
+- Abra o backend com o comando `npm run back` da mesma pasta da instrução anterior.
 
 O objetivo da N2 é desenvolver um agregador de notícias:
 
