@@ -2,7 +2,8 @@ const express = require('express')
 const path = require('path')
 const cors = require('cors');
 const sql = require('sqlite3').verbose()
-const { 
+
+const {
   porta,
   DB_NOME,
   TABELA_FONTES_NOME,
@@ -10,44 +11,54 @@ const {
 } = require('./env.js')
 
 const app = express()
+
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
-app.use(cors());
-app.use(express.static(path.join(__dirname, 'src')));
+app.use(cors())
+app.use(express.static(path.join(__dirname, 'src')))
 
 const db = new sql.Database(
   `./${DB_NOME}`,
   (erro) => {
     if (erro) {
-      console.error(`Erro ao abrir o banco de dados "${DB_NOME}":`, erro.message);
+      console.error(`Erro ao abrir o banco de dados "${DB_NOME}":`, erro.message)
     } else {
-      console.log(`Conectado ao banco de dados SQLite3 "${DB_NOME}"`);
+      console.log(`Conectado ao banco de dados SQLite3 "${DB_NOME}"`)
     }
   }
 )
 
 db.run(
   `CREATE TABLE IF NOT EXISTS ${TABELA_FONTES_NOME} (
-    id INTEGER PRIMARY KEY AUTOINCREMENT
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT,
+    endereco TEXT
   )`,
   (erro) => {
     if (erro) {
-      console.error(`Erro ao criar a tabela "${TABELA_FONTES_NOME}"`, erro.message);
+      console.error(`Erro ao criar a tabela "${TABELA_FONTES_NOME}"`, erro.message)
     } else {
-      console.log(`Tabela "${TABELA_FONTES_NOME}" pronta!`);
+      console.log(`Tabela "${TABELA_FONTES_NOME}" pronta!`)
     }
   }
 )
 
 db.run(
   `CREATE TABLE IF NOT EXISTS ${TABELA_NOTICIAS_NOME} (
-    id INTEGER PRIMARY KEY AUTOINCREMENT
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT,
+    descricao TEXT,
+    link TEXT,
+    categoria TEXT,
+    dataPublicacao TEXT,
+    fonte_id INTEGER,
+    FOREIGN KEY(fonte_id) REFERENCES ${TABELA_FONTES_NOME}(id)
   )`,
   (erro) => {
     if (erro) {
-      console.error(`Erro ao criar a tabela "${TABELA_NOTICIAS_NOME}"`, erro.message);
+      console.error(`Erro ao criar a tabela "${TABELA_NOTICIAS_NOME}"`, erro.message)
     } else {
-      console.log(`Tabela "${TABELA_NOTICIAS_NOME}" pronta!`);
+      console.log(`Tabela "${TABELA_NOTICIAS_NOME}" pronta!`)
     }
   }
 )
@@ -60,18 +71,134 @@ app.get('/', (req, res) => {
   })
 })
 
+app.get('/api/fontes/cadastrar', (req, res) => {
+
+  const { nome, endereco } = req.query
+  if (!nome || !endereco) {
+    return res.status(400).json({
+      ok: false,
+      message: "Informe nome e endereço."
+    })
+  }
+
+  db.run(
+    `INSERT INTO ${TABELA_FONTES_NOME}
+    (nome,endereco)
+    VALUES(?,?)`,
+
+    [nome, endereco],
+    function (erro) {
+      if (erro) {
+        return res.status(500).json({
+          error: erro.message
+        })
+      }
+
+      res.json({
+        ok: true,
+        id: this.lastID
+      })
+    }
+  )
+})
+
+app.get('/api/noticias', (req, res) => {
+
+  db.all(
+
+    `SELECT * FROM ${TABELA_NOTICIAS_NOME}`,
+    [],
+    (erro, noticias) => {
+      if (erro) {
+        return res.status(500).json({
+          error: erro.message
+        })
+      }
+      res.json(noticias)
+    }
+  )
+})
 
 app.get('/api/noticias/categoria/:categoria', (req, res) => {
   const categoria = req.params.categoria
+
+  db.all(
+
+    `SELECT *
+     FROM ${TABELA_NOTICIAS_NOME}
+     WHERE categoria = ?`,
+    [categoria],
+    (erro, noticias) => {
+      if (erro) {
+        return res.status(500).json({
+          error: erro.message
+        })
+      }
+      res.json(noticias)
+    }
+  )
 })
 
-app.get('/api/fontes/cadastrar', (req, res) => {
-  if (!req.query) {
-    res.status(400).json({ error: erro.message });
-    return
-  }
+app.get('/api/noticias/fonte/:id', (req, res) => {
 
-  const { nome, endereco } = req.query
+  db.all(
+    `SELECT *
+     FROM ${TABELA_NOTICIAS_NOME}
+     WHERE fonte_id = ?`,
+
+    [req.params.id],
+    (erro, noticias) => {
+      if (erro) {
+        return res.status(500).json({
+          error: erro.message
+        })
+      }
+      res.json(noticias)
+    }
+  )
+})
+
+app.delete('/api/fontes/:id', (req, res) => {
+  db.run(
+    `DELETE FROM ${TABELA_FONTES_NOME}
+     WHERE id = ?`,
+
+    [req.params.id],
+
+    function (erro) {
+
+      if (erro) {
+        return res.status(500).json({
+          error: erro.message
+        })
+      }
+
+      res.json({
+        ok: true
+      })
+    }
+  )
+})
+
+app.delete('/api/noticias/:id', (req, res) => {
+
+  db.run(
+
+    `DELETE FROM ${TABELA_NOTICIAS_NOME}
+     WHERE id = ?`,
+
+    [req.params.id],
+    function (erro) {
+      if (erro) {
+        return res.status(500).json({
+          error: erro.message
+        })
+      }
+      res.json({
+        ok: true
+      })
+    }
+  )
 })
 
 app.listen(porta, () => {
