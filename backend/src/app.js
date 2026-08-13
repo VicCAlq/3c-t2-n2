@@ -44,11 +44,11 @@ db.run(
   },
 );
 
-
 db.run(
   `CREATE TABLE IF NOT EXISTS ${TABELA_NOTICIAS_NOME} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     titulo TEXT,
+    fonte TEXT,
     link TEXT UNIQUE,
     descricao TEXT,
     dataDePublicacao TEXT,
@@ -73,43 +73,99 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get('/api/fontes/cadastrar', (req, res) => {
+app.get('/api/fontes/cadastrar', async (req, res) => {
 
-  if (!req.query) {
-    res.status(400).json({ error: erro.message });
-    return
-  } else if (typeof(req.query.link) !== 'string') {
-    res.status(400).json({ error: `Propriedade "link" não é uma string válida` });
-  } else {
-    let url
-    try {
-      url = new URL(req.query.link)
-    } catch(err) {
-      res.status(400).json({ error: `O texto enviado não se trata de um endereço Web` });
-    }
+  if (typeof(req.query.link) !== 'string') {
+    console.log("link em branco")
+    return res.status(400).json({ error: 'Propriedade "link" não é uma string válida' });
   }
 
+  try {
+    new URL(req.query.link)
+  } catch {
+    console.log("link inválido")
+    return res.status(400).json({ error: 'O texto enviado não se trata de um endereço Web' });
+  }
 
+  function executar(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      db.run(sql, params, function (erro) {
+        if (erro) { reject(erro) }
+        else { resolve(this) }
+      })
+    })
+  }
 
-  const { nome, endereco } = req.query;
+  function buscar(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      db.all(sql, params, (erro, linhas) => {
+        if (erro) { reject(erro) }
+        else { resolve(linhas) }
+      })
+    })
+  }
 
+  async function inserirOuBuscarPorLink(tabela, colunas, valores) {
+    const indiceLink = colunas.indexOf('link')
+    const link = valores[indiceLink]
 
-  db.run(
-    `INSERT INTO ${TABELA_FONTES_NOME} (nome, endereco) VALUES (?, ?)`,
-    [nome, endereco],
-    (erro) => {
-      if (erro) {
-        res.status(400).json({ error: erro.message });
-        return;
-      } else {
-        res.status(201).json({
-          message: "Fonte cadastrada com sucesso",
-          data: { nome, endereco },
-        });
-      }
-    },
-  );
+    await executar(
+      `INSERT OR IGNORE INTO ${tabela} (${colunas.join(', ')}) VALUES (${colunas.map(() => '?').join(', ')})`,
+      valores
+    )
+
+    const [linha] = await buscar(`SELECT * FROM ${tabela} WHERE link = ?`, [link])
+    return linha
+  }
+
+  try {
+    await executar('BEGIN TRANSACTION')
+
+    const feed = await baixarFeedRSS(req.query.link)
+
+    const fonte = await inserirOuBuscarPorLink(
+      TABELA_FONTES_NOME,
+      ['titulo', 'link', 'descricao'],
+      [feed.fonte.titulo, feed.fonte.link, feed.fonte.descricao]
+    )
+
+    const noticiasInseridas = []
+    for (const noticia of feed.noticias) {
+      const linha = await inserirOuBuscarPorLink(
+        TABELA_NOTICIAS_NOME,
+        ['titulo', 'fonte', 'link', 'descricao', 'dataDePublicacao', 'categorias'],
+        [
+          noticia.titulo,
+          feed.fonte.titulo,
+          noticia.link,
+          noticia.descricao,
+          noticia.dataPublicacao,
+          noticia.categorias?.toString() || ''
+        ]
+      )
+      if (linha) { noticiasInseridas.push(linha) }
+    }
+
+    await executar('COMMIT')
+
+    res.json({
+      mensagem: 'Feed XML inserido com sucesso.',
+      fontes: fonte ? [fonte] : [],
+      noticias: noticiasInseridas,
+    })
+
+  } catch (erro) {
+    await executar('ROLLBACK')
+    console.log(`erro na inserção: ${erro}`)
+    res.status(500).json({ erro: erro.message })
+  }
 });
+
+
+
+
+
+
 
 
 app.get("/api/fontes/filtrarFontes", (req, res) => {
@@ -128,7 +184,7 @@ app.get("/api/fontes/filtrarFontes", (req, res) => {
       }
     },
   );
-});
+})
 
 
 app.get("/api/noticias/categoria/:categoria", (req, res) => {
