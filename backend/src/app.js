@@ -190,7 +190,15 @@ app.get("/api/fontes/filtrarFontes", (req, res) => {
 app.get("/api/noticias/categoria/:categoria", (req, res) => {
   const categoria = req.params.categoria;
   db.all(
-    //Completa ae kkkkkkkkkkkkkkkkkk
+    `SELECT * FROM ${TABELA_FONTES_NOME} WHERE categoria = ?`,
+    [categoria],
+    (err, rows) => {
+      if(err){
+        return res.status(500).json({error: err.message});
+      } else {
+        return res.json(rows);
+      }
+    }
   );
 });
 
@@ -216,7 +224,17 @@ app.delete("/api/fontes/deletar/fonte/:id", (req, res) => {
 app.delete("/api/noticias/deletar/noticia/:id", (req, res) => {
   const id = req.params.id;
   db.run(
-    //Complete ae kkkkkkkk
+    `DELETE FROM ${TABELA_NOTICIAS_NOME} WHERE id = ?`,
+    [id],
+    (erro) => {
+      if (erro) {
+        res.status(400).json({ error: erro.message });
+      } else {
+        res.status(200).json({
+          message: "Noticia deletada",
+        });
+      }
+    },
   );
 });
 
