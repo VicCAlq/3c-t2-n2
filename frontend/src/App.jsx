@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 
 const API_URL = 'http://localhost:3000';
@@ -148,12 +149,15 @@ export default function App() {
 
 
   const categorias = [
-    ...new Set(
-      noticias
-        .map((noticia) => noticia.categoria)
-        .filter(Boolean)
-    )
-  ];
+  'Política',
+  'Economia',
+  'Esportes',
+  'Tecnologia',
+  'Ciência',
+  'Saúde',
+  'Cultura',
+  'Mundo',
+];
 
 
   return (
@@ -331,15 +335,11 @@ export default function App() {
 
         </View>
 
-
-   
         {/* NOTÍCIAS */}
-      
 
         <Text style={styles.subtitulo}>
           Notícias
         </Text>
-
 
         {carregando ? (
 
@@ -383,6 +383,14 @@ export default function App() {
               <Text style={styles.data}>
                 {noticia.dataPublicacao}
               </Text>
+<TouchableOpacity
+  style={styles.botaoNoticia}
+  onPress={() => Linking.openURL(noticia.link)}
+>
+  <Text style={styles.textoBotaoNoticia}>
+    Ler notícia completa
+  </Text>
+</TouchableOpacity>
 
             </View>
 
@@ -400,10 +408,10 @@ export default function App() {
 
 const styles = StyleSheet.create({
 
-  tela: {
-    flex: 1,
-    backgroundColor: '#eeeecc',
-  },
+ tela: {
+  flex: 1,
+  backgroundColor: '#8B0000',
+},
 
   container: {
     padding: 20,
@@ -512,4 +520,18 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
 
+  botaoNoticia: {
+  backgroundColor: '#8B0000',
+  padding: 10,
+  borderRadius: 8,
+  marginTop: 10,
+  alignItems: 'center',
+},
+
+textoBotaoNoticia: {
+  color: '#ffffff',
+  fontWeight: 'bold',
+},
+
 });
+
