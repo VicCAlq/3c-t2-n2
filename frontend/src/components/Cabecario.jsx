@@ -1,6 +1,6 @@
- import { View, Pressable, Text, StyleSheet } from 'react-native';
+  import { View, Pressable, Text, StyleSheet } from 'react-native';
  import { useState } from 'react';
-
+ 
 
 const estilo = StyleSheet.create ({
     texto1: {
@@ -96,7 +96,7 @@ const estilo = StyleSheet.create ({
 
     viewBotoes: {
         flex:1,
-         height: '100vw',
+         height: '20vh',
          backgroundColor:'#8ac5e9',
         flexDirection: 'row',
         alignItems:'center',
@@ -138,6 +138,7 @@ export default function Cabecario({}) {
 
 
               <Pressable style = {[estilo.botao2, hover2 && estilo.hover2]}
+    
             onHoverIn={() => setHover2(true)} 
             onHoverOut={() => setHover2(false)}>
                 <Text  style = {[estilo.texto2, hover2 && estilo.texto2Hover]}
@@ -152,7 +153,7 @@ export default function Cabecario({}) {
             onHoverOut={() => setHover3(false)}>
                 <Text  style = {[estilo.texto3, hover3 && estilo.texto3Hover]}
             onHoverIn={() => setHover3(true)} 
-            onHoverOut={() => setHove3r(false)}
+            onHoverOut={() => setHover3(false)}
                >Sobre Nós</Text>
             </Pressable>
 
