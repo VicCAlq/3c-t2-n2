@@ -2,6 +2,7 @@ const express = require('express')
 const path = require('path')
 const cors = require('cors')
 const sql = require('sqlite3').verbose()
+const Parser = require('rss-parser')
 
 const {
   porta,
@@ -11,6 +12,7 @@ const {
 } = require('./env.js')
 
 const app = express()
+const parser = new Parser()
 
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
@@ -71,7 +73,183 @@ db.run(
     }
   }
 )
+function normalizarCategoria(categoria) {
 
+  if (!categoria) {
+    return 'Geral'
+  }
+
+  const texto = categoria.toLowerCase()
+
+  if (
+    texto.includes('polít') ||
+    texto.includes('polit')
+  ) {
+    return 'Política'
+  }
+
+  if (
+    texto.includes('econ') ||
+    texto.includes('mercado')
+  ) {
+    return 'Economia'
+  }
+
+  if (
+    texto.includes('esport') ||
+    texto.includes('futebol')
+  ) {
+    return 'Esportes'
+  }
+
+  if (
+    texto.includes('tecn') ||
+    texto.includes('tech') ||
+    texto.includes('digital')
+  ) {
+    return 'Tecnologia'
+  }
+
+  if (
+    texto.includes('ciên') ||
+    texto.includes('cienc')
+  ) {
+    return 'Ciência'
+  }
+
+  if (
+    texto.includes('saúd') ||
+    texto.includes('saud')
+  ) {
+    return 'Saúde'
+  }
+
+  if (
+    texto.includes('cultur') ||
+    texto.includes('arte')
+  ) {
+    return 'Cultura'
+  }
+
+  if (
+    texto.includes('mundo') ||
+    texto.includes('internacional')
+  ) {
+    return 'Mundo'
+  }
+
+  return 'Geral'
+}
+
+
+async function importarNoticias(fonteId, endereco, nomeFonte) {
+
+  try {
+
+    console.log(`Buscando notícias de: ${nomeFonte}`)
+
+    const feed = await parser.parseURL(endereco)
+
+    for (const item of feed.items) {
+
+      const titulo = item.title || 'Sem título'
+
+      const descricao =
+        item.contentSnippet ||
+        item.content ||
+        'Sem descrição'
+
+      const link = item.link || ''
+
+      const dataPublicacao =
+        item.isoDate ||
+        item.pubDate ||
+        ''
+
+      const categoria = normalizarCategoria(
+  item.categories && item.categories.length > 0
+    ? item.categories[0]
+    : ''
+)
+
+
+      // Verifica se a notícia já existe
+      db.get(
+        `SELECT id
+         FROM ${TABELA_NOTICIAS_NOME}
+         WHERE link = ?`,
+        [link],
+        (erro, noticiaExistente) => {
+
+          if (erro) {
+            console.error(
+              'Erro ao verificar notícia:',
+              erro.message
+            )
+
+            return
+          }
+
+
+          // Se já existe, não cadastra novamente
+          if (noticiaExistente) {
+            return
+          }
+
+
+          // Cadastra a notícia
+          db.run(
+            `INSERT INTO ${TABELA_NOTICIAS_NOME}
+            (
+              titulo,
+              descricao,
+              link,
+              categoria,
+              dataPublicacao,
+              fonte_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              titulo,
+              descricao,
+              link,
+              categoria,
+              dataPublicacao,
+              fonteId
+            ],
+            (erro) => {
+
+              if (erro) {
+
+                console.error(
+                  'Erro ao cadastrar notícia:',
+                  erro.message
+                )
+
+              } else {
+
+                console.log(
+                  `Notícia adicionada: ${titulo}`
+                )
+              }
+            }
+          )
+        }
+      )
+    }
+
+    console.log(
+      `Importação concluída: ${nomeFonte}`
+    )
+
+  } catch (erro) {
+
+    console.error(
+      `Erro ao importar notícias de ${nomeFonte}:`,
+      erro.message
+    )
+  }
+}
 
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -88,6 +266,7 @@ app.post('/api/fontes', (req, res) => {
   const { nome, endereco } = req.body
 
   if (!nome || !endereco) {
+
     return res.status(400).json({
       ok: false,
       message: 'Informe o nome e o endereço da fonte.'
@@ -102,17 +281,27 @@ app.post('/api/fontes', (req, res) => {
     function (erro) {
 
       if (erro) {
+
         return res.status(500).json({
           ok: false,
           error: erro.message
         })
       }
 
+      const fonteId = this.lastID
+
+      importarNoticias(
+        fonteId,
+        endereco,
+        nome
+      )
+
       res.status(201).json({
         ok: true,
-        message: 'Fonte cadastrada com sucesso!',
-        id: this.lastID
+        message: 'Fonte cadastrada e notícias importadas!',
+        id: fonteId
       })
+
     }
   )
 })
@@ -139,7 +328,49 @@ app.get('/api/fontes', (req, res) => {
   )
 })
 
+app.post('/api/fontes/:id/importar', (req, res) => {
 
+  const id = req.params.id
+
+  db.get(
+    `SELECT *
+     FROM ${TABELA_FONTES_NOME}
+     WHERE id = ?`,
+    [id],
+    async (erro, fonte) => {
+
+      if (erro) {
+
+        return res.status(500).json({
+          ok: false,
+          error: erro.message
+        })
+
+      }
+
+      if (!fonte) {
+
+        return res.status(404).json({
+          ok: false,
+          message: 'Fonte não encontrada.'
+        })
+
+      }
+
+      await importarNoticias(
+        fonte.id,
+        fonte.endereco,
+        fonte.nome
+      )
+
+      res.json({
+        ok: true,
+        message: 'Notícias importadas com sucesso!'
+      })
+
+    }
+  )
+})
 
 app.get('/api/noticias', (req, res) => {
 
