@@ -63,11 +63,12 @@ db.run(
   `CREATE TABLE IF NOT EXISTS ${TABELA_NOTICIAS_NOME} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     titulo TEXT,
-    fonte TEXT,
+    fonte_id INTEGER,
     link TEXT UNIQUE,
     descricao TEXT,
     dataDePublicacao TEXT,
-    categorias TEXT
+    categorias TEXT,
+    FOREIGN KEY (fonte_id) REFERENCES ${TABELA_FONTES_NOME}(id)
   )`,
   (erro) => {
     if (erro) {
@@ -100,85 +101,124 @@ function buscar(sql, params = []) {
 
 app.get('/api/fontes/cadastrar', async (req, res) => {
 
-
-  if (typeof(req.query.link) !== 'string') {
-    console.log("link em branco")
-    return res.status(400).json({ error: 'Propriedade "link" não é uma string válida' });
+  // Verifica se o link foi enviado
+  if (typeof req.query.link !== 'string') {
+    return res.status(400).json({
+      error: 'Propriedade "link" não é uma string válida'
+    })
   }
 
-
+  // Verifica se o link é uma URL válida
   try {
     new URL(req.query.link)
   } catch {
-    console.log("link inválido")
-    return res.status(400).json({ error: 'O texto enviado não se trata de um endereço Web' });
+    return res.status(400).json({
+      error: 'O texto enviado não se trata de um endereço Web'
+    })
   }
-
-  async function inserirOuBuscarPorLink(tabela, colunas, valores) {
-    const indiceLink = colunas.indexOf('link')
-    const link = valores[indiceLink]
-
-
-    await executar(
-      `INSERT OR IGNORE INTO ${tabela} (${colunas.join(', ')}) VALUES (${colunas.map(() => '?').join(', ')})`,
-      valores
-    )
-
-
-    const [linha] = await buscar(`SELECT * FROM ${tabela} WHERE link = ?`, [link])
-    return linha
-  }
-
 
   try {
+
     await executar('BEGIN TRANSACTION')
 
-
+    // Baixa o feed RSS
     const feed = await baixarFeedRSS(req.query.link)
 
-
-    const fonte = await inserirOuBuscarPorLink(
-      TABELA_FONTES_NOME,
-      ['titulo', 'link', 'descricao'],
-      [feed.fonte.titulo, feed.fonte.link, feed.fonte.descricao]
+    // Verifica se a fonte já existe
+    const fontes = await buscar(
+      `SELECT * FROM ${TABELA_FONTES_NOME} WHERE endereco = ?`,
+      [feed.fonte.link]
     )
+
+    let fonte
+
+    if (fontes.length > 0) {
+      // Se já existe, usa a fonte existente
+      fonte = fontes[0]
+
+    } else {
+      // Se não existe, cadastra uma nova fonte
+      const resultado = await executar(
+        `INSERT INTO ${TABELA_FONTES_NOME}
+        (nome, endereco)
+        VALUES (?, ?)`,
+        [
+          feed.fonte.titulo,
+          feed.fonte.link
+        ]
+      )
+
+      // Busca a fonte que acabou de ser cadastrada
+      const fontesInseridas = await buscar(
+        `SELECT * FROM ${TABELA_FONTES_NOME} WHERE id = ?`,
+        [resultado.lastID]
+      )
+
+      fonte = fontesInseridas[0]
+    }
 
 
     const noticiasInseridas = []
+
+    // Insere as notícias
     for (const noticia of feed.noticias) {
-      const linha = await inserirOuBuscarPorLink(
-        TABELA_NOTICIAS_NOME,
-        ['titulo', 'fonte', 'link', 'descricao', 'dataDePublicacao', 'categorias'],
+
+      const resultado = await executar(
+        `INSERT OR IGNORE INTO ${TABELA_NOTICIAS_NOME}
+        (
+          titulo,
+          fonte_id,
+          link,
+          descricao,
+          dataDePublicacao,
+          categorias
+        )
+        VALUES (?, ?, ?, ?, ?, ?)`,
         [
           noticia.titulo,
-          feed.fonte.titulo,
+          fonte.id,
           noticia.link,
           noticia.descricao,
           noticia.dataPublicacao,
           noticia.categorias?.toString() || ''
         ]
       )
-      if (linha) { noticiasInseridas.push(linha) }
+
+      // Se a notícia foi realmente inserida
+      if (resultado.changes > 0) {
+
+        const noticias = await buscar(
+          `SELECT * FROM ${TABELA_NOTICIAS_NOME} WHERE id = ?`,
+          [resultado.lastID]
+        )
+
+        if (noticias.length > 0) {
+          noticiasInseridas.push(noticias[0])
+        }
+      }
     }
 
 
     await executar('COMMIT')
 
 
-    res.json({
+    res.status(200).json({
       mensagem: 'Feed XML inserido com sucesso.',
-      fontes: fonte ? [fonte] : [],
-      noticias: noticiasInseridas,
+      fontes: [fonte],
+      noticias: noticiasInseridas
     })
 
-
   } catch (erro) {
+
     await executar('ROLLBACK')
-    console.log(`erro na inserção: ${erro}`)
-    res.status(500).json({ erro: erro.message })
+
+    console.log(`Erro na inserção: ${erro.message}`)
+
+    res.status(500).json({
+      erro: erro.message
+    })
   }
 })
-
 
 
 
