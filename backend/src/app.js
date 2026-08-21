@@ -143,12 +143,18 @@ function normalizarCategoria(categoria) {
 
 
 async function importarNoticias(fonteId, endereco, nomeFonte) {
-
   try {
-
     console.log(`Buscando notícias de: ${nomeFonte}`)
 
     const feed = await parser.parseURL(endereco)
+
+    if (!feed.items || feed.items.length === 0) {
+
+      console.log(
+        `Nenhuma notícia encontrada em ${endereco}`
+      )
+      return false
+    }
 
     for (const item of feed.items) {
 
@@ -165,15 +171,17 @@ async function importarNoticias(fonteId, endereco, nomeFonte) {
         item.isoDate ||
         item.pubDate ||
         ''
-
-      const categoria = normalizarCategoria(
+   const categoria = normalizarCategoria(
   item.categories && item.categories.length > 0
     ? item.categories[0]
-    : ''
+    : 'Geral'
+
 )
 
+      if (!link) {
+        continue
+      }
 
-      // Verifica se a notícia já existe
       db.get(
         `SELECT id
          FROM ${TABELA_NOTICIAS_NOME}
@@ -182,22 +190,18 @@ async function importarNoticias(fonteId, endereco, nomeFonte) {
         (erro, noticiaExistente) => {
 
           if (erro) {
+
             console.error(
               'Erro ao verificar notícia:',
               erro.message
             )
-
             return
           }
 
-
-          // Se já existe, não cadastra novamente
           if (noticiaExistente) {
             return
           }
 
-
-          // Cadastra a notícia
           db.run(
             `INSERT INTO ${TABELA_NOTICIAS_NOME}
             (
@@ -231,9 +235,11 @@ async function importarNoticias(fonteId, endereco, nomeFonte) {
                 console.log(
                   `Notícia adicionada: ${titulo}`
                 )
+
               }
             }
           )
+
         }
       )
     }
@@ -242,12 +248,16 @@ async function importarNoticias(fonteId, endereco, nomeFonte) {
       `Importação concluída: ${nomeFonte}`
     )
 
+    return true
+
   } catch (erro) {
 
     console.error(
       `Erro ao importar notícias de ${nomeFonte}:`,
       erro.message
     )
+
+    return false
   }
 }
 
@@ -262,9 +272,7 @@ app.get('/', (req, res) => {
 
 
 app.post('/api/fontes', (req, res) => {
-
   const { nome, endereco } = req.body
-
   if (!nome || !endereco) {
 
     return res.status(400).json({
@@ -278,27 +286,37 @@ app.post('/api/fontes', (req, res) => {
     (nome, endereco)
     VALUES (?, ?)`,
     [nome, endereco],
-    function (erro) {
 
+    async function (erro) {
       if (erro) {
-
         return res.status(500).json({
           ok: false,
           error: erro.message
         })
+
       }
 
       const fonteId = this.lastID
 
-      importarNoticias(
+      const importou = await importarNoticias(
         fonteId,
         endereco,
         nome
       )
 
+      if (!importou) {
+
+        return res.status(400).json({
+          ok: false,
+          message:
+            'A fonte foi cadastrada, mas o endereço informado não contém um RSS válido.'
+        })
+      }
+
       res.status(201).json({
         ok: true,
-        message: 'Fonte cadastrada e notícias importadas!',
+        message:
+          'Fonte cadastrada e notícias importadas!',
         id: fonteId
       })
 
