@@ -99,6 +99,13 @@ function buscar(sql, params = []) {
   })
 }
 
+app.get('/', (req, res) => {
+  res.json({
+    recebido: true,
+    message: "Funcionando"
+  })
+})
+
 app.get('/api/fontes/cadastrar', async (req, res) => {
 
   // Verifica se o link foi enviado
