@@ -526,7 +526,6 @@ app.delete('/api/fontes/:id', (req, res) => {
   )
 })
 
-
 app.delete('/api/noticias/:id', (req, res) => {
 
   const id = req.params.id
@@ -558,9 +557,6 @@ app.delete('/api/noticias/:id', (req, res) => {
     }
   )
 })
-
-
-
 app.listen(porta, () => {
   console.log(`Servidor rodando em http://localhost:${porta}`)
 })
