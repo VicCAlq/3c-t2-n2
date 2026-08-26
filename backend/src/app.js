@@ -166,48 +166,42 @@ app.get('/api/fontes/cadastrar', async (req, res) => {
     }
 
 
-    const noticiasInseridas = []
-
     // Insere as notícias
-    for (const noticia of feed.noticias) {
+for (const noticia of feed.noticias) {
+  console.log("Inserindo notícia:", noticia.titulo)
 
-      const resultado = await executar(
-        `INSERT OR IGNORE INTO ${TABELA_NOTICIAS_NOME}
-        (
-          titulo,
-          fonte_id,
-          link,
-          descricao,
-          dataDePublicacao,
-          categorias
-        )
-        VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          noticia.titulo,
-          fonte.id,
-          noticia.link,
-          noticia.descricao,
-          noticia.dataPublicacao,
-          noticia.categorias?.toString() || ''
-        ]
-      )
+  await executar(
+    `INSERT OR IGNORE INTO ${TABELA_NOTICIAS_NOME}
+    (
+      titulo,
+      fonte_id,
+      link,
+      descricao,
+      dataDePublicacao,
+      categorias
+    )
+    VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      noticia.titulo,
+      fonte.id,
+      noticia.link,
+      noticia.descricao,
+      noticia.dataPublicacao,
+      noticia.categorias?.toString() || ''
+    ]
+  )
+}
+await executar('COMMIT')
 
-      // Se a notícia foi realmente inserida
-      if (resultado.changes > 0) {
+// Depois de inserir, busca TODAS as notícias dessa fonte
+const noticiasInseridas = await buscar(
+  `SELECT * FROM ${TABELA_NOTICIAS_NOME}
+   WHERE fonte_id = ?`,
+  [fonte.id]
+)
 
-        const noticias = await buscar(
-          `SELECT * FROM ${TABELA_NOTICIAS_NOME} WHERE id = ?`,
-          [resultado.lastID]
-        )
+console.log("Notícias no banco:", noticiasInseridas)
 
-        if (noticias.length > 0) {
-          noticiasInseridas.push(noticias[0])
-        }
-      }
-    }
-
-
-    await executar('COMMIT')
 
 
     res.status(200).json({
@@ -400,25 +394,6 @@ app.delete('/api/noticias/:id', async (req, res) => {
 
 
 
-
-function executar(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (erro) {
-      if (erro) { reject(erro) }
-      else { resolve(this) } // { ultimoID, mudanças }
-    })
-  })
-}
-
-
-function buscar(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (erro, linhas) => {
-      if (erro) { reject(erro) }
-      else { resolve(linhas) }
-    })
-  })
-}
 
 
 
