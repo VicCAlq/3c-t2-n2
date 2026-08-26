@@ -1,169 +1,153 @@
-  import { View, Pressable, Text, StyleSheet } from 'react-native';
- import { useState } from 'react';
- 
+import { View, Pressable, Text, StyleSheet } from "react-native";
+import { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 
-const estilo = StyleSheet.create ({
-    texto1: {
-    color: '#2d5063ff',
-    fontWeight:'bold',
-    fontSize: '15',
-    textAlign:'center',
-    padding:"2px"
+const estilo = StyleSheet.create({
+  cabecario: {
+    width: "100%",
+    backgroundColor: "#67b9e6",
+  },
 
+  topo: {
+    height: 45,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#67b9e6",
+  },
 
-    },
-     texto1Hover: {
-    color: '#396983',
-    fontWeight:'bold',
-    fontSize: '15',
-    textAlign:'center',
-    padding:"2px"
+  tituloApp: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#ffffff",
+    letterSpacing: 1,
+  },
 
+  viewBotoes: {
+    height: 60,
+    width: "100%",
+    flexDirection: "row",
+    paddingHorizontal: 10,
+    paddingBottom: 8,
+  },
 
-    },
-    botao1: {
-        backgroundColor: '#80b2cd',
-         padding: '10px',
-         margin: '0px',
-         width: '30vw',
-         height: '5vw',
-         justifyContent: 'center',
-        alignItems:'center',
-         borderBottomLeftRadius:'60px'
+  botao1: {
+    flex: 1,
+    backgroundColor: "#80b2cd",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 4,
+    borderBottomLeftRadius: 25,
+    borderTopLeftRadius: 25,
+  },
 
-    },
-    hover1: {
-        backgroundColor:'#8cbed8',
-    },
+  botao2: {
+    flex: 1,
+    backgroundColor: "#6796af",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 2,
+  },
 
+  botao3: {
+    flex: 1,
+    backgroundColor: "#406274",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 4,
+    borderBottomRightRadius: 25,
+    borderTopRightRadius: 25,
+  },
 
+  hover1: {
+    backgroundColor: "#9acde8",
+  },
 
-       texto2: {
-        color: '#cfedff',
-    fontWeight:'bold',
-    fontSize: '15',
-    textAlign:'center'
-    },
-     texto2Hover: {
-    color: '#ffffff',
-    fontWeight:'bold',
-    fontSize: '15',
-    textAlign:'center',
-    padding:"2px" },
-    botao2: {
-        backgroundColor: '#6796af',
-         padding: '10px',
-         margin: '0px',
-         width: '30vw',
-         height: '5vw',
-         justifyContent: 'center',
-        alignItems:'center',
-    } ,
-    hover2: {
-        backgroundColor:'#77afce',
-    },
+  hover2: {
+    backgroundColor: "#78afd0",
+  },
 
+  hover3: {
+    backgroundColor: "#558199",
+  },
 
+  texto1: {
+    color: "#2d5063",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
 
-       texto3: {
-        color: '#cfedff',
-    fontWeight:'bold',
-    fontSize: '20',
-    textAlign:'center'
-    },
-     texto3Hover: {
-    color: '#ffffff',
-    fontWeight:'bold',
-    fontSize: '15',
-    textAlign:'center',
-    padding:"2px"},
-    botao3: {
-        backgroundColor: '#406274ff',
-         padding: '10px',
-         margin: '0px',
-         width: '30vw',
-         height: '5vw',
-         justifyContent: 'center',
-        alignItems:'center',
-         borderBottomRightRadius:'60px'
-    },
-    hover3: {
-        backgroundColor:'rgb(85, 129, 153)',
-    },
+  texto1Hover: {
+    color: "#1f455b",
+  },
 
+  texto2: {
+    color: "#cfedff",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
 
+  texto2Hover: {
+    color: "#ffffff",
+  },
 
+  texto3: {
+    color: "#cfedff",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
 
-    viewBotoes: {
-        flex:1,
-         height: '20vh',
-         backgroundColor:'#8ac5e9',
-        flexDirection: 'row',
-        alignItems:'center',
-        width:'100vw',
-        justifyContent: 'center',
-        
-       
-    },
-    viewInicial: {
+  texto3Hover: {
+    color: "#ffffff",
+  },
+});
 
-        height:'5vh',
-          width:'100vw',
-        backgroundColor: '#67b9e6'
-    }
+export default function Cabecario() {
+  const navigation = useNavigation();
 
+  const [hover, setHover1] = useState(false);
+  const [hover2, setHover2] = useState(false);
+  const [hover3, setHover3] = useState(false);
 
-})
-export default function Cabecario({}) {
-    const  [hover, setHover1] = useState(false);
-    const  [hover2, setHover2] = useState(false);
-    const  [hover3, setHover3] = useState(false);
+  return (
+    <View style={estilo.cabecario}>
+      <View style={estilo.topo}>
+        <Text style={estilo.tituloApp}>Agregador de Notícias</Text>
+      </View>
 
-    return  (
+      <View style={estilo.viewBotoes}>
+        <Pressable
+          style={[estilo.botao1, hover && estilo.hover1]}
+          onHoverIn={() => setHover1(true)}
+          onHoverOut={() => setHover1(false)}
+          onPress={() => navigation.navigate("Inicio")}
+        >
+          <Text style={[estilo.texto1, hover && estilo.texto1Hover]}>
+            Página Inicial
+          </Text>
+        </Pressable>
 
-          <View>
-        <View style = {estilo.viewInicial}>
-            </View>
-                  
-        <View style = {estilo.viewBotoes}>
-       
-            <Pressable style = {[estilo.botao1, hover && estilo.hover1]}
-            onHoverIn={() => setHover1(true)} 
-            onHoverOut={() => setHover1(false)}>
-                <Text  style = {[estilo.texto1, hover && estilo.texto1Hover]}
-            onHoverIn={() => setHover1(true)} 
-            onHoverOut={() => setHover1(false)}
-               >Página Inicial </Text>
-            </Pressable>
+        <Pressable
+          style={[estilo.botao2, hover2 && estilo.hover2]}
+          onHoverIn={() => setHover2(true)}
+          onHoverOut={() => setHover2(false)}
+          onPress={() => navigation.navigate("Noticias")}
+        >
+          <Text style={[estilo.texto2, hover2 && estilo.texto2Hover]}>
+            Notícias
+          </Text>
+        </Pressable>
 
-
-              <Pressable style = {[estilo.botao2, hover2 && estilo.hover2]}
-    
-            onHoverIn={() => setHover2(true)} 
-            onHoverOut={() => setHover2(false)}>
-                <Text  style = {[estilo.texto2, hover2 && estilo.texto2Hover]}
-            onHoverIn={() => setHover2(true)} 
-            onHoverOut={() => setHover2(false)}
-               >Notícias</Text>
-            </Pressable>
-
-
-              <Pressable style = {[estilo.botao3, hover3 && estilo.hover3]}
-            onHoverIn={() => setHover3(true)} 
-            onHoverOut={() => setHover3(false)}>
-                <Text  style = {[estilo.texto3, hover3 && estilo.texto3Hover]}
-            onHoverIn={() => setHover3(true)} 
-            onHoverOut={() => setHover3(false)}
-               >Sobre Nós</Text>
-            </Pressable>
-
-          </View>
-
-
-        
-        </View>
-       
-
-
-    )
+        <Pressable
+          style={[estilo.botao3, hover3 && estilo.hover3]}
+          onHoverIn={() => setHover3(true)}
+          onHoverOut={() => setHover3(false)}
+          onPress={() => navigation.navigate("Sobre")}
+        >
+          <Text style={[estilo.texto3, hover3 && estilo.texto3Hover]}>
+            Sobre Nós
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 }

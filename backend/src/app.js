@@ -2,6 +2,9 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const sql = require("sqlite3").verbose();
+
+const { baixarFeedRSS } = require("./components/leitorDeRss.js");
+
 const {
   porta,
   DB_NOME,
@@ -9,13 +12,11 @@ const {
   TABELA_NOTICIAS_NOME,
 } = require("./env.js");
 
-
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, "src")));
-
 
 const db = new sql.Database(`./${DB_NOME}`, (erro) => {
   if (erro) {
@@ -25,12 +26,12 @@ const db = new sql.Database(`./${DB_NOME}`, (erro) => {
   }
 });
 
-
 db.run(
   `CREATE TABLE IF NOT EXISTS ${TABELA_FONTES_NOME} (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL,
-    link TEXT NOT NULL
+    titulo TEXT NOT NULL,
+    link TEXT NOT NULL,
+    descricao TEXT NOT NULL
   )`,
   (erro) => {
     if (erro) {
@@ -56,14 +57,15 @@ db.run(
   )`,
   (erro) => {
     if (erro) {
-      console.error(`Erro ao criar a tabela "${TABELA_NOTICIAS_NOME}"`, erro.message);
+      console.error(
+        `Erro ao criar a tabela "${TABELA_NOTICIAS_NOME}"`,
+        erro.message,
+      );
     } else {
       console.log(`Tabela "${TABELA_NOTICIAS_NOME}" pronta!`);
     }
-  }
-)
-
-
+  },
+);
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -73,105 +75,117 @@ app.get("/", (req, res) => {
   });
 });
 
-app.get('/api/fontes/cadastrar', async (req, res) => {
-
-  if (typeof(req.query.link) !== 'string') {
-    console.log("link em branco")
-    return res.status(400).json({ error: 'Propriedade "link" não é uma string válida' });
+app.get("/api/fontes/cadastrar", async (req, res) => {
+  if (typeof req.query.link !== "string") {
+    console.log("link em branco");
+    return res
+      .status(400)
+      .json({ error: 'Propriedade "link" não é uma string válida' });
   }
 
   try {
-    new URL(req.query.link)
+    new URL(req.query.link);
   } catch {
-    console.log("link inválido")
-    return res.status(400).json({ error: 'O texto enviado não se trata de um endereço Web' });
+    console.log("link inválido");
+    return res
+      .status(400)
+      .json({ error: "O texto enviado não se trata de um endereço Web" });
   }
 
   function executar(sql, params = []) {
     return new Promise((resolve, reject) => {
       db.run(sql, params, function (erro) {
-        if (erro) { reject(erro) }
-        else { resolve(this) }
-      })
-    })
+        if (erro) {
+          reject(erro);
+        } else {
+          resolve(this);
+        }
+      });
+    });
   }
 
   function buscar(sql, params = []) {
     return new Promise((resolve, reject) => {
       db.all(sql, params, (erro, linhas) => {
-        if (erro) { reject(erro) }
-        else { resolve(linhas) }
-      })
-    })
+        if (erro) {
+          reject(erro);
+        } else {
+          resolve(linhas);
+        }
+      });
+    });
   }
 
   async function inserirOuBuscarPorLink(tabela, colunas, valores) {
-    const indiceLink = colunas.indexOf('link')
-    const link = valores[indiceLink]
+    const indiceLink = colunas.indexOf("link");
+    const link = valores[indiceLink];
 
     await executar(
-      `INSERT OR IGNORE INTO ${tabela} (${colunas.join(', ')}) VALUES (${colunas.map(() => '?').join(', ')})`,
-      valores
-    )
+      `INSERT OR IGNORE INTO ${tabela} (${colunas.join(", ")}) VALUES (${colunas.map(() => "?").join(", ")})`,
+      valores,
+    );
 
-    const [linha] = await buscar(`SELECT * FROM ${tabela} WHERE link = ?`, [link])
-    return linha
+    const [linha] = await buscar(`SELECT * FROM ${tabela} WHERE link = ?`, [
+      link,
+    ]);
+    return linha;
   }
 
   try {
-    await executar('BEGIN TRANSACTION')
+    await executar("BEGIN TRANSACTION");
 
-    const feed = await baixarFeedRSS(req.query.link)
+    const feed = await baixarFeedRSS(req.query.link);
 
     const fonte = await inserirOuBuscarPorLink(
       TABELA_FONTES_NOME,
-      ['titulo', 'link', 'descricao'],
-      [feed.fonte.titulo, feed.fonte.link, feed.fonte.descricao]
-    )
+      ["titulo", "link", "descricao"],
+      [feed.fonte.titulo, feed.fonte.link, feed.fonte.descricao],
+    );
 
-    const noticiasInseridas = []
+    const noticiasInseridas = [];
     for (const noticia of feed.noticias) {
       const linha = await inserirOuBuscarPorLink(
         TABELA_NOTICIAS_NOME,
-        ['titulo', 'fonte', 'link', 'descricao', 'dataDePublicacao', 'categorias'],
+        [
+          "titulo",
+          "fonte",
+          "link",
+          "descricao",
+          "dataDePublicacao",
+          "categorias",
+        ],
         [
           noticia.titulo,
           feed.fonte.titulo,
           noticia.link,
           noticia.descricao,
           noticia.dataPublicacao,
-          noticia.categorias?.toString() || ''
-        ]
-      )
-      if (linha) { noticiasInseridas.push(linha) }
+          noticia.categorias?.toString() || "",
+        ],
+      );
+      if (linha) {
+        noticiasInseridas.push(linha);
+      }
     }
 
-    await executar('COMMIT')
+    await executar("COMMIT");
 
     res.json({
-      mensagem: 'Feed XML inserido com sucesso.',
+      mensagem: "Feed XML inserido com sucesso.",
       fontes: fonte ? [fonte] : [],
       noticias: noticiasInseridas,
-    })
-
+    });
   } catch (erro) {
-    await executar('ROLLBACK')
-    console.log(`erro na inserção: ${erro}`)
-    res.status(500).json({ erro: erro.message })
+    await executar("ROLLBACK");
+    console.log(`erro na inserção: ${erro}`);
+    res.status(500).json({ erro: erro.message });
   }
 });
 
-
-
-
-
-
-
-
-app.get("/api/fontes/filtrarFontes", (req, res) => {
+app.get("/api/noticias/fonte", (req, res) => {
   db.all(
-    `SELECT * FROM ${TABELA_FONTES_NOME} WHERE endereco = ?`,
-    [req.query.endereco],
+    `SELECT * FROM ${TABELA_NOTICIAS_NOME} WHERE fonte = ?`,
+    [req.query.fonte],
     (erro, fontes) => {
       if (erro) {
         res.status(400).json({ error: erro.message });
@@ -184,60 +198,97 @@ app.get("/api/fontes/filtrarFontes", (req, res) => {
       }
     },
   );
-})
+});
 
+app.get("/api/noticias", (req, res) => {
+  db.all(`SELECT * FROM ${TABELA_NOTICIAS_NOME}`, [], (erro, noticias) => {
+    if (erro) {
+      return res.status(500).json({
+        error: erro.message,
+      });
+    }
+
+    res.status(200).json({
+      message: "Notícias carregadas com sucesso",
+      data: noticias,
+    });
+  });
+});
+
+app.get("/api/fontes", (req, res) => {
+  db.all(`SELECT * FROM ${TABELA_FONTES_NOME}`, [], (erro, fontes) => {
+    if (erro) {
+      return res.status(500).json({
+        error: erro.message,
+      });
+    }
+
+    res.status(200).json({
+      data: fontes,
+    });
+  });
+});
+app.get("/api/noticias/categoria", (req, res) => {
+  const categoria = req.query.categoria;
+
+  db.all(
+    `SELECT * FROM ${TABELA_NOTICIAS_NOME} WHERE categorias LIKE ?`,
+    [`%${categoria}%`],
+    (erro, noticias) => {
+      if (erro) {
+        return res.status(500).json({
+          error: erro.message,
+        });
+      }
+
+      res.status(200).json({
+        message: "Notícias filtradas por categoria",
+        data: noticias,
+      });
+    },
+  );
+});
 
 app.get("/api/noticias/categoria/:categoria", (req, res) => {
   const categoria = req.params.categoria;
   db.all(
-    `SELECT * FROM ${TABELA_FONTES_NOME} WHERE categoria = ?`,
+    `SELECT * FROM ${TABELA_NOTICIAS_NOME} WHERE categorias = ?`,
     [categoria],
     (err, rows) => {
-      if(err){
-        return res.status(500).json({error: err.message});
+      if (err) {
+        return res.status(500).json({ error: err.message });
       } else {
         return res.json(rows);
       }
-    }
+    },
   );
 });
-
 
 app.delete("/api/fontes/deletar/fonte/:id", (req, res) => {
   const id = req.params.id;
-  db.run(
-    `DELETE FROM ${TABELA_FONTES_NOME} WHERE id = ?`,
-    [id],
-    (erro) => {
-      if (erro) {
-        res.status(400).json({ error: erro.message });
-      } else {
-        res.status(200).json({
-          message: "Fonte deletada",
-        });
-      }
-    },
-  );
+  db.run(`DELETE FROM ${TABELA_FONTES_NOME} WHERE id = ?`, [id], (erro) => {
+    if (erro) {
+      res.status(400).json({ error: erro.message });
+    } else {
+      res.status(200).json({
+        message: "Fonte deletada",
+      });
+    }
+  });
 });
-
 
 app.delete("/api/noticias/deletar/noticia/:id", (req, res) => {
   const id = req.params.id;
-  db.run(
-    `DELETE FROM ${TABELA_NOTICIAS_NOME} WHERE id = ?`,
-    [id],
-    (erro) => {
-      if (erro) {
-        res.status(400).json({ error: erro.message });
-      } else {
-        res.status(200).json({
-          message: "Noticia deletada",
-        });
-      }
-    },
-  );
+  db.run(`DELETE FROM ${TABELA_NOTICIAS_NOME} WHERE id = ?`, [id], (erro) => {
+    if (erro) {
+      res.status(400).json({ error: erro.message });
+    } else {
+      res.status(200).json({
+        message: "Noticia deletada",
+      });
+    }
+  });
 });
-
 
 app.listen(porta, () => {
   console.log(`Servidor rodando em http://localhost:${porta}`);
