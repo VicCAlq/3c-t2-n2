@@ -46,30 +46,30 @@ export default function App() {
   }
 
 async function buscarFontes() {
-  const resposta = await fetch(
+  await fetch(
     'http://localhost:3451/api/fontes/'
   )
-
-  const resultado = await resposta.json()
-
-  console.log("Fontes:", resultado)
-
-  setFontes(resultado.fontes)
+    .then(resposta => { return resposta.json() })
+    .then(resultado => {
+      console.log("Resposta do Backend:", resultado)
+      console.log("Fontes:", resultado)
+      setFontes(resultado.fontes)
+    })
 }
 
 async function filtrarPorCategoria(categoria) {
   setCategoria(categoria)
 
-  const resposta = await fetch(
+  await fetch(
     `http://localhost:3451/api/noticias/categoria/${encodeURIComponent(categoria)}`
   )
-
-  const resultado = await resposta.json()
-
-  setTabela(resultado.noticias)
+    .then(resposta => { return resposta.json() })
+    .then(resultado => {
+      console.log("Resposta do Backend:", resultado)
+      console.log("Notícias por categoria:", resultado)
+      setTabela(resultado.noticias)
+    })
 }
-
-
 async function filtrarPorFonte(fonte) {
   setFonte(fonte)
 
