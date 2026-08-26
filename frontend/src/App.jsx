@@ -11,7 +11,7 @@ export default function App() {
   // Aqui você vai armazenar o link do RSS
   const [ endereco, setEndereco ] = useState("")
   // Aqui você vai armazenar a tabela de notícias enviadas pelo backend
-  const [ tabela, setTabela ] = useState([])
+  const [ tabela, setTabela ] = useState(new Array(0))
   // Aqui você vai armazenar a fonte de notícias selecionada
   const [ fonte, setFonte ] = useState("")
   // Aqui você vai armazenar a categoria de notícias selecionada
@@ -36,16 +36,14 @@ export default function App() {
   }
 
   async function buscarCategorias() {
-  const resposta = await fetch(
-    'http://localhost:3451/api/categorias/'
-  )
-
-  const resultado = await resposta.json()
-
-  console.log("Categorias:", resultado)
-
-  setCategorias(resultado.categorias)
-}
+    await fetch(
+      'http://localhost:3451/api/categorias/'
+    ).then(resposta => { return resposta.json() })
+    .then(resultado => {console.log("Resposta do Backend:", resultado),
+        console.log("Categorias:", resultado)
+        setCategorias(resultado.categorias)
+      })
+  }
 
 async function buscarFontes() {
   const resposta = await fetch(
