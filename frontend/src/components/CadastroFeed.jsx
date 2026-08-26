@@ -1,40 +1,19 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 
-export default function TabelaNoticias({ tabela }) {
-
-      console.log("Tabela recebida:", tabela)
+export default function CadastroFeed({ endereco, setEndereco, cadastrarFeed }) {
 
       return (
             <View style={styles.container}>
 
-                  <Text style={styles.tituloPagina}>
-                        Notícias
-                  </Text>
+                  <TextInput
+                    value={endereco}
+                    onChangeText={setEndereco}
+                    placeholder="Cole/Digite aqui o feed RSS"
+                  />
 
-                  {tabela.map((noticia, key) => {
-
-                        return (
-                              <View style={styles.card} key={key}>
-
-                                    <Text style={styles.titulo}>
-                                          {noticia.titulo}
-                                    </Text>
-
-                                    <Text style={styles.descricao}>
-                                          {noticia.descricao}
-                                    </Text>
-
-                                    <Text style={styles.data}>
-                                          Data: {noticia.dataDePublicacao}
-                                    </Text>
-
-                                    <Text style={styles.link}>
-                                          {noticia.link}
-                                    </Text>
-
-                              </View>
-                        )
-                  })}
+                  <Pressable onPress={() => setEndereco(endereco)}>
+                    <Text style={estilo.textoBotao}>Enviar Feed RSS</Text>
+                  </Pressable>
 
             </View>
       )
