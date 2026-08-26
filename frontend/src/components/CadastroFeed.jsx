@@ -11,7 +11,7 @@ export default function CadastroFeed({ endereco, setEndereco, cadastrarFeed }) {
                     placeholder="Cole/Digite aqui o feed RSS"
                   />
 
-                  <Pressable onPress={() => setEndereco(endereco)}>
+                  <Pressable onPress={() => cadastrarFeed(endereco)}>
                     <Text style={estilo.textoBotao}>Enviar Feed RSS</Text>
                   </Pressable>
 
