@@ -12,7 +12,7 @@ export default function CadastroFeed({ endereco, setEndereco, cadastrarFeed }) {
                   />
 
                   <Pressable onPress={() => cadastrarFeed(endereco)}>
-                    <Text style={estilo.textoBotao}>Enviar Feed RSS</Text>
+                    <Text>Enviar Feed RSS</Text>
                   </Pressable>
 
             </View>
