@@ -1,13 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Exemplo from './components/Exemplo';
+import Pagprin from "./components/Pagprin.jsx";
+import Cadastrar from "./components/Cadastrar.jsx";
+
 
 export default function App() {
   return (
     <View style={styles.container}>
       <ScrollView>
-        <Text>Comece aqui seu projeto Mobile</Text>
-        <Exemplo>Este é um componente de exemplo</Exemplo>
+      <Pagprin/>
+      <Cadastrar/>
       </ScrollView>
     </View>
   );
