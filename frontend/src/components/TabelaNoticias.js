@@ -4,40 +4,44 @@ export default function TabelaNoticias({ tabela }) {
 
       console.log("Tabela recebida:", tabela)
 
-      return (
-            <View style={styles.container}>
+      if (!tabela) {
+            return <h2>Tabela ainda não carregada</h2>
+      } else {
+            return (
+                  <View style={styles.container}>
 
-                  <Text style={styles.tituloPagina}>
-                        Notícias
-                  </Text>
+                        <Text style={styles.tituloPagina}>
+                              Notícias
+                        </Text>
 
-                  {tabela.map((noticia, key) => {
+                        {tabela?.map((noticia, key) => {
 
-                        return (
-                              <View style={styles.card} key={key}>
+                              return (
+                                    <View style={styles.card} key={key}>
 
-                                    <Text style={styles.titulo}>
-                                          {noticia.titulo}
-                                    </Text>
+                                          <Text style={styles.titulo}>
+                                                {noticia.titulo}
+                                          </Text>
 
-                                    <Text style={styles.descricao}>
-                                          {noticia.descricao}
-                                    </Text>
+                                          <Text style={styles.descricao}>
+                                                {noticia.descricao}
+                                          </Text>
 
-                                    <Text style={styles.data}>
-                                          Data: {noticia.dataDePublicacao}
-                                    </Text>
+                                          <Text style={styles.data}>
+                                                Data: {noticia.dataDePublicacao}
+                                          </Text>
 
-                                    <Text style={styles.link}>
-                                          {noticia.link}
-                                    </Text>
+                                          <Text style={styles.link}>
+                                                {noticia.link}
+                                          </Text>
 
-                              </View>
-                        )
-                  })}
+                                    </View>
+                              )
+                        })}
 
-            </View>
-      )
+                  </View>
+            )
+      }
 }
 
 const styles = StyleSheet.create({
